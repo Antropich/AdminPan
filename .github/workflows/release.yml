@@ -21,25 +21,20 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt pyinstaller
 
-      - name: Stamp version into the app
+      - name: Stamp version into the app and the installer
         if: github.event_name == 'release'
         shell: pwsh
         run: |
           $v = "${{ github.event.release.tag_name }}".TrimStart("v")
-          (Get-Content admin_panel.py -Raw -Encoding UTF8) -replace 'APP_VERSION = "[^"]*"', "APP_VERSION = `"$v`"" | Set-Content admin_panel.py -Encoding UTF8
+          foreach ($f in "admin_panel.py", "installer.py") {
+            (Get-Content $f -Raw -Encoding UTF8) -replace 'APP_VERSION = "[^"]*"', "APP_VERSION = `"$v`"" | Set-Content $f -Encoding UTF8
+          }
 
       - name: Build AdminPanel.exe
         run: pyinstaller --noconsole --onefile --uac-admin --icon assets/icon.ico --name AdminPanel admin_panel.py
 
-      - name: Install Inno Setup
-        run: choco install innosetup -y --no-progress
-
       - name: Build installer
-        shell: pwsh
-        run: |
-          $v = "${{ github.event.release.tag_name }}".TrimStart("v")
-          if ($v -notmatch '^\d') { $v = "0.0.0" }
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$v" installer.iss
+        run: pyinstaller --noconsole --onefile --uac-admin --icon assets/icon.ico --name AdminPanel-Setup --add-data "dist/AdminPanel.exe;payload" --add-data "assets/icon.ico;payload" --distpath installer_output --workpath build_setup installer.py
 
       - uses: actions/upload-artifact@v4
         with:
