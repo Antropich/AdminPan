@@ -17,20 +17,22 @@ SolidCompression=yes
 PrivilegesRequired=admin
 WizardStyle=modern
 UninstallDisplayIcon={app}\AdminPanel.exe
+SetupIconFile=assets\icon.ico
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
 Source: "dist\AdminPanel.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "assets\icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{autoprograms}\Admin Panel"; Filename: "{app}\AdminPanel.exe"
-Name: "{autodesktop}\Admin Panel"; Filename: "{app}\AdminPanel.exe"; Tasks: desktopicon
+Name: "{autoprograms}\Admin Panel"; Filename: "{app}\AdminPanel.exe"; IconFilename: "{app}\icon.ico"
+Name: "{autodesktop}\Admin Panel"; Filename: "{app}\AdminPanel.exe"; IconFilename: "{app}\icon.ico"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\AdminPanel.exe"; Description: "{cm:LaunchProgram,Admin Panel}"; Flags: nowait postinstall skipifsilent

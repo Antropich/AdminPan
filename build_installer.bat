@@ -18,7 +18,7 @@ if not defined PY (
 )
 %PY% -m pip install -r requirements.txt pyinstaller
 if errorlevel 1 goto fail
-%PY% -m PyInstaller --noconsole --onefile --uac-admin --name AdminPanel admin_panel.py
+%PY% -m PyInstaller --noconsole --onefile --uac-admin --icon assets\icon.ico --name AdminPanel admin_panel.py
 if not exist "dist\AdminPanel.exe" goto fail
 "%ISCC%" installer.iss
 if not exist "installer_output\AdminPanel-Setup.exe" goto fail

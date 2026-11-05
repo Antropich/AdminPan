@@ -170,8 +170,9 @@ T = {
         "hide": "Hide",
         "auto_chat": "Open chat automatically",
         "tab_console": "Console", "ask_level": "What is your admin level?",
-        "ask_level_hint": "Later it can only be raised with /aupgrade in the Console tab.",
-        "ok": "OK", "console_placeholder": "Type a command, e.g. /help",
+        "ask_level_hint": "Click your level. Later it can only be raised with /aupgrade in the Console tab.",
+        "ok": "OK", "console_placeholder": "Type a command",
+        "tab_cmdlist": "Command list", "level_group": "Level {n}", "cmdlist_empty": "No commands available.",
     },
     "ru": {
         "title": "Админ-панель", "tab_commands": "Команды", "tab_favorites": "Избранное",
@@ -205,8 +206,9 @@ T = {
         "hide": "Скрыть",
         "auto_chat": "Открывать чат автоматически",
         "tab_console": "Консоль", "ask_level": "Какой у вас уровень администратора?",
-        "ask_level_hint": "Потом его можно только повысить командой /aupgrade на вкладке «Консоль».",
-        "ok": "OK", "console_placeholder": "Введите команду, например /help",
+        "ask_level_hint": "Нажмите на свой уровень. Потом его можно только повысить командой /aupgrade на вкладке «Консоль».",
+        "ok": "OK", "console_placeholder": "Введите команду",
+        "tab_cmdlist": "Список команд", "level_group": "Уровень {n}", "cmdlist_empty": "Нет доступных команд.",
     },
     "uk": {
         "title": "Адмін-панель", "tab_commands": "Команди", "tab_favorites": "Обране",
@@ -240,8 +242,9 @@ T = {
         "hide": "Сховати",
         "auto_chat": "Відкривати чат автоматично",
         "tab_console": "Консоль", "ask_level": "Який у вас рівень адміністратора?",
-        "ask_level_hint": "Потім його можна лише підвищити командою /aupgrade на вкладці «Консоль».",
-        "ok": "OK", "console_placeholder": "Введіть команду, наприклад /help",
+        "ask_level_hint": "Натисніть на свій рівень. Потім його можна лише підвищити командою /aupgrade на вкладці «Консоль».",
+        "ok": "OK", "console_placeholder": "Введіть команду",
+        "tab_cmdlist": "Список команд", "level_group": "Рівень {n}", "cmdlist_empty": "Немає доступних команд.",
     },
 }
 
@@ -316,6 +319,8 @@ QPushButton#tile:hover { border-color: @BORDER_HI@; }
 QPushButton#primary { border: 1px solid @ACCENT@; color: @ACCENT@; padding: 14px; font-size: 14px; font-weight: 500; }
 QPushButton#primary:hover { background: @BADGE_BG@; border-color: @ACCENT@; color: @ACCENT@; }
 QPushButton#secondary { padding: 14px; font-size: 14px; }
+QPushButton#lvl { background: transparent; border: 1px solid @BORDER_HI@; border-radius: 22px; padding: 0; font-size: 16px; color: @LABEL@; }
+QPushButton#lvl:hover { border-color: @ACCENT@; color: @ACCENT@; background: @BADGE_BG@; }
 QPushButton#iconbtn { background: transparent; border: none; border-radius: 4px; padding: 0; }
 QPushButton#iconbtn:hover { background: @BORDER@; }
 QPushButton#iconcta { background: rgba(255, 255, 255, 8); border: 1px solid @NAV_BORDER@; border-radius: 6px; padding: 0; }
@@ -729,13 +734,14 @@ class CustomCommandDialog(QDialog):
 
 
 class LevelDialog(QDialog):
-    """Shown once, on the very first start: asks for the admin level."""
+    """Shown once, on the very first start: click a circle with your admin level."""
 
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle(tr("title"))
         self.setModal(True)
         self.setFixedWidth(400)
+        self.chosen = None
         lay = QVBoxLayout(self)
         lay.setContentsMargins(GAP, GAP, GAP, GAP)
         lay.setSpacing(16)
@@ -745,21 +751,27 @@ class LevelDialog(QDialog):
         hint = QLabel(tr("ask_level_hint"))
         hint.setObjectName("muted")
         hint.setWordWrap(True)
-        self.spin = QSpinBox()
-        self.spin.setRange(1, 10)
-        self.spin.setValue(1)
-        btn = QPushButton(tr("ok"))
-        btn.setObjectName("primary")
-        btn.setDefault(True)
-        btn.clicked.connect(self.accept)
         lay.addWidget(q)
         lay.addWidget(hint)
-        lay.addWidget(self.spin)
         lay.addSpacing(8)
-        lay.addWidget(btn)
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(12)
+        grid.setVerticalSpacing(12)
+        for n in range(1, 11):
+            b = QPushButton(str(n))
+            b.setObjectName("lvl")
+            b.setFixedSize(44, 44)
+            b.setCursor(Qt.PointingHandCursor)
+            b.clicked.connect(lambda _c=False, v=n: self.pick(v))
+            grid.addWidget(b, (n - 1) // 5, (n - 1) % 5, Qt.AlignCenter)
+        lay.addLayout(grid)
+
+    def pick(self, n):
+        self.chosen = n
+        self.accept()
 
     def value(self):
-        return self.spin.value()
+        return self.chosen or 1
 
 
 class Toast(QLabel):
@@ -930,6 +942,60 @@ class TilesView(QWidget):
         self.scroll.setWidget(inner)
 
 
+class CommandListView(QWidget):
+    """All commands available at the current level, grouped by level (1, then 2, ...)."""
+
+    def __init__(self, main):
+        super().__init__()
+        cfg = main.cfg
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, 24, 0, 0)
+        lay.setSpacing(16)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        lay.addWidget(scroll)
+        inner = QWidget()
+        col = QVBoxLayout(inner)
+        col.setContentsMargins(0, 0, 12, 16)
+        col.setSpacing(GAP)
+        cmds = [c for c in all_commands(cfg) if c[1] <= cfg["level"]]
+        if not cmds:
+            empty = QLabel(tr("cmdlist_empty"))
+            empty.setObjectName("muted")
+            col.addWidget(empty)
+        for lvl in sorted({c[1] for c in cmds}):
+            items = sorted((c for c in cmds if c[1] == lvl), key=lambda c: (CATS.index(c[2]), c[0]))
+            head = QLabel(tr("level_group").format(n=lvl))
+            head.setObjectName("catlabel")
+            card = QFrame()
+            card.setObjectName("card")
+            grid = QGridLayout(card)
+            grid.setContentsMargins(PAD, PAD, PAD, PAD)
+            grid.setHorizontalSpacing(GAP)
+            grid.setVerticalSpacing(10)
+            for c in range(3):
+                grid.setColumnStretch(c, 1)
+            for i, (cmd, _l, cat) in enumerate(items):
+                cell = QHBoxLayout()
+                cell.setSpacing(10)
+                name = QLabel(cmd)
+                name.setObjectName("tilename")
+                sec = QLabel(T["en"]["cat_" + cat])
+                sec.setObjectName("tilebind")
+                cell.addWidget(name)
+                cell.addWidget(sec)
+                cell.addStretch(1)
+                grid.addLayout(cell, i // 3, i % 3)
+            block = QVBoxLayout()
+            block.setSpacing(12)
+            block.addWidget(head)
+            block.addWidget(card)
+            col.addLayout(block)
+        col.addStretch(1)
+        scroll.setWidget(inner)
+
+
 class TitleBar(QWidget):
     def __init__(self, main, items):
         super().__init__()
@@ -1016,8 +1082,9 @@ class Main(QWidget):
         self.last_send = 0.0
         self.dirty = False
         self.tabs = None
-        self.console_lines = ["Admin Panel console. Type /help for commands."]
+        self.console_lines = ["Admin Panel console."]
         self.setWindowTitle(tr("title"))
+        self.setWindowIcon(self.make_icon())
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setMinimumSize(900, 520)
@@ -1092,13 +1159,13 @@ class Main(QWidget):
         bl.setContentsMargins(GAP, 24, GAP, 12)
         bl.setSpacing(0)
         # pages: 0 commands, 1 favorites, 2 reports, 3 notes, 4 history,
-        #        5 settings (gear in the header), 6 console
+        #        5 settings (gear in the header), 6 console, 7 command list
         self.tabs = QStackedWidget()
         for page in (TilesView(self, False), TilesView(self, True), self.build_reports(),
                      self.build_notes(), self.build_history(), self.build_settings(),
-                     self.build_console()):
+                     self.build_console(), CommandListView(self)):
             self.tabs.addWidget(page)
-        items = [(0, tr("tab_commands")), (1, tr("tab_favorites")), (2, tr("tab_reports")),
+        items = [(0, tr("tab_commands")), (7, tr("tab_cmdlist")), (1, tr("tab_favorites")), (2, tr("tab_reports")),
                  (3, tr("tab_notes")), (4, tr("tab_history")), (6, tr("tab_console"))]
         self.title_bar = TitleBar(self, items)
         self.tabs.currentChanged.connect(self.title_bar.set_active)
@@ -1303,11 +1370,6 @@ class Main(QWidget):
     def console_exec(self, text):
         parts = text.split()
         cmd, args = parts[0].lower(), parts[1:]
-        if cmd == "/help":
-            return ["/help             show this list",
-                    "/alevel           show your admin level",
-                    "/aupgrade <level> raise your admin level (1-10)",
-                    "/clear            clear the console"]
         if cmd == "/alevel":
             return ["Admin level: %d" % self.cfg["level"]]
         if cmd == "/clear":
@@ -1325,7 +1387,7 @@ class Main(QWidget):
             self.cfg.save()
             QTimer.singleShot(0, self.after_upgrade)
             return ["Admin level raised: %d -> %d" % (cur, lvl)]
-        return ["Unknown command: %s (try /help)" % cmd]
+        return ["Unknown command: %s" % cmd]
 
     def after_upgrade(self):
         self.rebuild()
@@ -1634,8 +1696,14 @@ class Main(QWidget):
 
 
 def main():
+    try:  # own taskbar identity, so Windows shows the moon icon and not the Python one
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("AdminPanel.RageMP")
+    except Exception:
+        pass
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
+    app.setWindowIcon(Main.make_icon())
     cfg = Config()
     set_lang(cfg["language"])
     hk = HotkeyManager()

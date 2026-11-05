@@ -17,7 +17,7 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-%PY% -m PyInstaller --noconsole --onefile --uac-admin --name AdminPanel admin_panel.py
+%PY% -m PyInstaller --noconsole --onefile --uac-admin --icon assets\icon.ico --name AdminPanel admin_panel.py
 if not exist "dist\AdminPanel.exe" (
   echo Build failed, dist\AdminPanel.exe was not created.
   pause
