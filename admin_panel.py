@@ -12,6 +12,8 @@ import json
 import time
 import threading
 import datetime
+import webbrowser
+import urllib.request
 from pathlib import Path
 
 from PySide6.QtCore import (
@@ -33,6 +35,8 @@ except Exception:  # pragma: no cover
     keyboard = None
 
 APP_NAME = "AdminPanel"
+APP_VERSION = "1.2.0"   # the release workflow rewrites this from the release tag
+REPO = "Yuka2241/AdminPan"
 
 # ----------------------------------------------------------------------------
 # Config
@@ -48,6 +52,8 @@ DEFAULTS = {
     "cooldown_ms": 300,
     "opacity": 100,
     "autostart": False,
+    "sound": False,
+    "check_updates": True,
     "binds": {"act:toggle": "insert"},
     "favorites": [],
     "custom_commands": [],
@@ -187,6 +193,263 @@ CATS = ["mute", "jail", "kick", "warn", "ban", "watch", "info", "chat", "admin",
         "player", "vehicle", "event", "give", "world", "server", "custom"]
 
 
+# Short descriptions for the "?" hints: command -> (Russian, English). Edit freely.
+COMMAND_INFO = {
+    '/a': ('Сообщение в админ-чат', 'Message to the admin chat'),
+    '/asms': ('Ответить игроку по ID (ответ на репорт)', 'Reply to a player by ID (report answer)'),
+    '/admins': ('Список администраторов онлайн', 'List of admins online'),
+    '/adelaction': ('Удалить действие или объект, созданный вами', 'Delete an action or object made by you'),
+    '/mute': ('Выдать мут игроку: ID, время, причина', 'Mute a player: ID, time, reason'),
+    '/unmute': ('Снять мут с игрока', "Remove a player's mute"),
+    '/offmute': ('Выдать мут оффлайн-игроку', 'Mute an offline player'),
+    '/offunmute': ('Снять мут с оффлайн-игрока', 'Unmute an offline player'),
+    '/fz': ('Заморозить игрока', 'Freeze a player'),
+    '/unfz': ('Разморозить игрока', 'Unfreeze a player'),
+    '/tp': ('Телепортироваться к игроку', 'Teleport to a player'),
+    '/tpc': ('Телепорт по координатам', 'Teleport to coordinates'),
+    '/tpcarnumber': ('Телепорт к машине по номеру', 'Teleport to a vehicle by its plate'),
+    '/mypos': ('Показать ваши координаты', 'Show your coordinates'),
+    '/sp': ('Начать слежку за игроком', 'Start spectating a player'),
+    '/usp': ('Закончить слежку', 'Stop spectating'),
+    '/flip': ('Перевернуть машину на колёса', 'Flip a vehicle upright'),
+    '/setdim': ('Сменить измерение (dimension) игроку', "Change a player's dimension"),
+    '/setdimcar': ('Сменить измерение машине', "Change a vehicle's dimension"),
+    '/checkdim': ('Узнать измерение игрока', "Check a player's dimension"),
+    '/id': ('Найти игрока по нику или ID', 'Find a player by name or ID'),
+    '/checkwanted': ('Проверить розыск игрока', "Check a player's wanted level"),
+    '/stats': ('Статистика игрока онлайн', "Online player's stats"),
+    '/offstats': ('Статистика оффлайн-игрока', "Offline player's stats"),
+    '/getvip': ('Информация о VIP игрока', "Player's VIP info"),
+    '/nhistory': ('История ников игрока', "Player's name history"),
+    '/ptime': ('Игровое время игрока', "Player's play time"),
+    '/hp': ('Восстановить себе здоровье', 'Restore your health'),
+    '/agm': ('Включить или выключить бессмертие', 'Toggle admin god mode'),
+    '/gm': ('Бессмертие для игрока', 'God mode for a player'),
+    '/slap': ('Подбросить игрока вверх', 'Slap a player into the air'),
+    '/inv': ('Включить или выключить невидимость', 'Toggle invisibility'),
+    '/takemask': ('Снять маску с игрока', "Take off a player's mask"),
+    '/redname': ('Включить или выключить красный ник админа', 'Toggle the red admin name'),
+    '/kl': ('Уточните на сервере: команда уровня 1', 'Level 1 command, check on your server'),
+    '/jail': ('Посадить игрока в админ-тюрьму', 'Send a player to admin jail'),
+    '/unjail': ('Выпустить игрока из админ-тюрьмы', 'Release a player from admin jail'),
+    '/offjail': ('Посадить оффлайн-игрока в админ-тюрьму', 'Jail an offline player'),
+    '/offunjail': ('Выпустить оффлайн-игрока из тюрьмы', 'Unjail an offline player'),
+    '/kick': ('Кикнуть игрока с сервера', 'Kick a player from the server'),
+    '/metp': ('Телепортировать игрока к себе', 'Teleport a player to you'),
+    '/metpcar': ('Телепортировать машину к себе', 'Teleport a vehicle to you'),
+    '/check': ('Подробная проверка игрока', 'Detailed player check'),
+    '/checkkill': ('Проверить убийства игрока', "Check a player's kills"),
+    '/medialist': ('Список медиа-аккаунтов', 'List of media accounts'),
+    '/spvehid': ('Следить за машиной по ID', 'Spectate a vehicle by ID'),
+    '/spawn': ('Вернуть игрока на спавн', 'Respawn a player'),
+    '/fixcar': ('Починить вашу машину', 'Repair your vehicle'),
+    '/fixcarid': ('Починить машину по ID', 'Repair a vehicle by ID'),
+    '/carnumber': ('Узнать или сменить номер машины', 'Check or change a vehicle plate'),
+    '/clear': ('Очистить игровой чат', 'Clear the game chat'),
+    '/ban': ('Забанить игрока: ID, дни, причина', 'Ban a player: ID, days, reason'),
+    '/unban': ('Разбанить игрока', 'Unban a player'),
+    '/offban': ('Забанить оффлайн-игрока', 'Ban an offline player'),
+    '/unbanoff': ('Разбанить оффлайн-игрока', 'Unban an offline player'),
+    '/warn': ('Выдать предупреждение игроку', 'Warn a player'),
+    '/unwarn': ('Снять предупреждение', 'Remove a warn'),
+    '/tpcar': ('Телепорт к машине', 'Teleport to a vehicle'),
+    '/tpbiz': ('Телепорт к бизнесу', 'Teleport to a business'),
+    '/tphouse': ('Телепорт к дому', 'Teleport to a house'),
+    '/checkmoney': ('Проверить деньги игрока', "Check a player's money"),
+    '/adelactionall': ('Удалить все действия или объекты админов', 'Delete all admin actions or objects'),
+    '/sethp': ('Установить здоровье игроку', "Set a player's health"),
+    '/revive': ('Воскресить игрока', 'Revive a player'),
+    '/kill': ('Убить игрока', 'Kill a player'),
+    '/spveh': ('Следить за машиной', 'Spectate a vehicle'),
+    '/delad': ('Удалить объявление игрока', "Delete a player's advert"),
+    '/offwarn': ('Выдать варн оффлайн-игроку', 'Warn an offline player'),
+    '/unwarnoff': ('Снять варн с оффлайн-игрока', 'Remove a warn from an offline player'),
+    '/softcheck': ('Мягкая проверка игрока без уведомления', 'Soft player check'),
+    '/veh': ('Создать машину', 'Spawn a vehicle'),
+    '/hardban': ('Выдать жёсткий бан (по железу)', 'Issue a hard ban'),
+    '/unhardban': ('Снять жёсткий бан', 'Remove a hard ban'),
+    '/offhardban': ('Жёсткий бан оффлайн-игроку', 'Hard ban an offline player'),
+    '/unhardbanoff': ('Снять жёсткий бан с оффлайн-игрока', 'Unhard-ban an offline player'),
+    '/delveh': ('Удалить машину рядом', 'Delete a nearby vehicle'),
+    '/delvehid': ('Удалить машину по ID', 'Delete a vehicle by ID'),
+    '/delvehall': ('Удалить все созданные машины', 'Delete all spawned vehicles'),
+    '/delmyveh': ('Удалить созданные вами машины', 'Delete vehicles you created'),
+    '/delobj': ('Удалить объект', 'Delete an object'),
+    '/createmp': ('Создать мероприятие', 'Create an event'),
+    '/startmp': ('Запустить мероприятие', 'Start an event'),
+    '/stopmp': ('Остановить мероприятие', 'Stop an event'),
+    '/banmp': ('Запретить игроку мероприятия', 'Ban a player from events'),
+    '/unbanmp': ('Снять запрет на мероприятия', 'Lift an events ban'),
+    '/mpkick': ('Убрать игрока с мероприятия', 'Kick a player from an event'),
+    '/mpplayers': ('Список участников мероприятия', 'List event players'),
+    '/mppos': ('Позиция мероприятия', 'Event position'),
+    '/mpo': ('Настройки мероприятия', 'Event options'),
+    '/mphp': ('Здоровье участникам мероприятия', 'Set health for event players'),
+    '/mpskin': ('Скин участнику мероприятия', "Set an event player's skin"),
+    '/mpskins': ('Скины для мероприятия', 'Event skins'),
+    '/mpveh': ('Машины для мероприятия', 'Event vehicles'),
+    '/accept': ('Принять запрос или заявку', 'Accept a request'),
+    '/unbanip': ('Разбанить по IP', 'Unban by IP'),
+    '/shardban': ('Жёсткий бан сразу на несколько аккаунтов', 'Hard ban on several accounts'),
+    '/sban': ('Серверный бан', 'Server ban'),
+    '/offunwarn': ('Снять варн с оффлайн-игрока (5 ур.)', 'Remove a warn from an offline player (lvl 5)'),
+    '/afuel': ('Заправить машину', 'Refuel a vehicle'),
+    '/givegun': ('Выдать оружие игроку', 'Give a weapon to a player'),
+    '/giveammo': ('Выдать патроны игроку', 'Give ammo to a player'),
+    '/skipquest': ('Пропустить квест игроку', 'Skip a quest for a player'),
+    '/setar': ('Установить броню игроку', "Set a player's armor"),
+    '/setname': ('Сменить ник игроку', "Change a player's name"),
+    '/setnameoff': ('Сменить ник оффлайн-игроку', "Change an offline player's name"),
+    '/setleader': ('Назначить лидера организации', 'Set an organization leader'),
+    '/delleader': ('Снять лидера организации', 'Remove an organization leader'),
+    '/offdelfrac': ('Выгнать оффлайн-игрока из организации', 'Remove an offline player from an organization'),
+    '/skick': ('Серверный кик', 'Server kick'),
+    '/ishard': ('Проверить, есть ли у игрока жёсткий бан', 'Check if a player is hard banned'),
+    '/setvehcord': ('Задать координаты машине', 'Set vehicle coordinates'),
+    '/agl': ('Админ-лог: общий', 'Admin log'),
+    '/alog': ('Лог действий админов', 'Admin actions log'),
+    '/nalog': ('Новый лог админов', 'New admin log'),
+    '/winlog': ('Лог выигрышей', 'Winnings log'),
+    '/delgun': ('Забрать оружие у игрока', "Remove a player's weapon"),
+    '/promosync': ('Синхронизировать промокоды', 'Sync promo codes'),
+    '/getstatsserverdata': ('Данные статистики сервера', 'Server stats data'),
+    '/setskin': ('Сменить скин игроку', "Set a player's skin"),
+    '/skin': ('Сменить свой скин', 'Change your skin'),
+    '/clothoff': ('Снять одежду с игрока', "Remove a player's clothes"),
+    '/setcolour': ('Покрасить машину', 'Set vehicle colour'),
+    '/delfrac': ('Удалить организацию', 'Delete an organization'),
+    '/setbizmafia': ('Назначить бизнес мафии', 'Assign a business to a mafia'),
+    '/delobjects': ('Удалить объекты', 'Delete objects'),
+    '/szstate': ('Состояние зоны (SZ)', 'Safe zone state'),
+    '/global': ('Сообщение всем игрокам', 'Global message to all players'),
+    '/pa': ('Сообщение в чат (для админов высокого уровня)', 'High-level admin chat message'),
+    '/sa': ('Сообщение от лица администрации', 'Administration announcement'),
+    '/sac': ('Сообщение администрации в чат', 'Administration chat message'),
+    '/sc': ('Серверное сообщение', 'Server message'),
+    '/tsc': ('Серверное сообщение с таймером', 'Timed server message'),
+    '/acancel': ('Отменить действие админа', 'Cancel an admin action'),
+    '/uncrimeban': ('Снять crimeban', 'Remove a crime ban'),
+    '/offuncrimeban': ('Снять crimeban с оффлайн-игрока', 'Remove a crime ban offline'),
+    '/setadmin': ('Назначить администратора', 'Appoint an admin'),
+    '/deladmin': ('Снять администратора', 'Remove an admin'),
+    '/offdeladmin': ('Снять оффлайн-администратора', 'Remove an offline admin'),
+    '/arank': ('Изменить ранг админа', "Change an admin's rank"),
+    '/offarank': ('Изменить ранг оффлайн-админа', "Change an offline admin's rank"),
+    '/aclear': ('Очистить админ-чат', 'Clear the admin chat'),
+    '/fclear': ('Очистить чат организации', 'Clear the faction chat'),
+    '/banlogin': ('Забанить логин', 'Ban a login'),
+    '/crimeban': ('Выдать crimeban', 'Issue a crime ban'),
+    '/offcrimeban': ('Crimeban оффлайн-игроку', 'Crime ban an offline player'),
+    '/getlogin': ('Узнать логин игрока', "Get a player's login"),
+    '/hideme': ('Скрыть себя из списка админов', 'Hide yourself from the admin list'),
+    '/vehs': ('Список машин', 'Vehicle list'),
+    '/spvehs': ('Следить за машинами', 'Spectate vehicles'),
+    '/setfracveh': ('Установить машину организации', 'Set an organization vehicle'),
+    '/svh': ('Серверная команда машин (уточните)', 'Vehicle command, check on your server'),
+    '/svm': ('Серверная команда машин (уточните)', 'Vehicle command, check on your server'),
+    '/svn': ('Серверная команда машин (уточните)', 'Vehicle command, check on your server'),
+    '/elog': ('Лог событий', 'Events log'),
+    '/givevip': ('Выдать VIP игроку', 'Give VIP to a player'),
+    '/offgivevip': ('Выдать VIP оффлайн-игроку', 'Give VIP to an offline player'),
+    '/giveexp': ('Выдать опыт игроку', 'Give experience to a player'),
+    '/givelvl': ('Выдать уровень игроку', 'Give a level to a player'),
+    '/goadditem': ('Выдать предмет игроку', 'Give an item to a player'),
+    '/givehc': ('Выдать валюту (HC) игроку', 'Give HC currency to a player'),
+    '/givehcrad': ('Выдать HC игрокам в радиусе', 'Give HC to players in a radius'),
+    '/getrb': ('Узнать данные RB игрока', "Get a player's RB data"),
+    '/setfamily': ('Установить семью игроку', "Set a player's family"),
+    '/setfractun': ('Настроить тюнинг организации', 'Set organization tuning'),
+    '/deljob': ('Убрать работу у игрока', "Remove a player's job"),
+    '/elections': ('Управление выборами', 'Manage elections'),
+    '/stt': ('Серверная команда (уточните)', 'Server command, check on your server'),
+    '/vlist': ('Список машин игрока', "List a player's vehicles"),
+    '/givecarnumber': ('Выдать номер машины', 'Give a vehicle plate'),
+    '/vehchange': ('Заменить машину игрока', "Change a player's vehicle"),
+    '/givemoney': ('Выдать деньги игроку', 'Give money to a player'),
+    '/offgivemoney': ('Выдать деньги оффлайн-игроку', 'Give money to an offline player'),
+    '/givereds': ('Выдать донат-валюту игроку', 'Give premium currency to a player'),
+    '/offgivereds': ('Выдать донат-валюту оффлайн-игроку', 'Give premium currency offline'),
+    '/additem': ('Добавить предмет в инвентарь', 'Add an item to inventory'),
+    '/giveclothes': ('Выдать одежду игроку', 'Give clothes to a player'),
+    '/carcoupon': ('Выдать купон на машину', 'Give a car coupon'),
+    '/bonussync': ('Синхронизировать бонусы', 'Sync bonuses'),
+    '/setmicrophone': ('Управление микрофоном игрока', "Control a player's microphone"),
+    '/takeoffbiz': ('Снять бизнес с игрока', 'Take a business from a player'),
+    '/changestock': ('Изменить склад бизнеса', 'Change business stock'),
+    '/setprod': ('Установить продукцию', 'Set production'),
+    '/creategarage': ('Создать гараж', 'Create a garage'),
+    '/setbliporg': ('Задать метку организации', 'Set an organization blip'),
+    '/delbliporg': ('Удалить метку организации', 'Delete an organization blip'),
+    '/sendcreator': ('Отправить в режим создателя', 'Send to creator mode'),
+    '/fsetcmd': ('Настроить команду организации', 'Set an organization command'),
+    '/autorestart': ('Настроить автоперезапуск', 'Configure auto restart'),
+    '/hidenick': ('Скрыть свой ник', 'Hide your nickname'),
+    '/dmgmodif': ('Изменить множитель урона', 'Change the damage multiplier'),
+    '/setvehdirt': ('Задать грязь на машине', 'Set vehicle dirt'),
+    '/vehcustom': ('Тюнинг машины', 'Customize a vehicle'),
+    '/vehcustompcolor': ('Основной цвет тюнинга машины', 'Vehicle primary colour'),
+    '/vehcustomscolor': ('Дополнительный цвет тюнинга машины', 'Vehicle secondary colour'),
+    '/giveredsall': ('Выдать донат-валюту всем', 'Give premium currency to everyone'),
+    '/givecase': ('Выдать кейс игроку', 'Give a case to a player'),
+    '/enablefunc': ('Включить или выключить функцию сервера', 'Toggle a server feature'),
+    '/restart': ('Перезапустить сервер', 'Restart the server'),
+    '/save': ('Сохранить данные сервера', 'Save server data'),
+    '/payday': ('Запустить PayDay', 'Trigger payday'),
+    '/newsimcard': ('Выдать новую сим-карту', 'Give a new SIM card'),
+    '/createbusiness': ('Создать бизнес', 'Create a business'),
+    '/deletebusiness': ('Удалить бизнес', 'Delete a business'),
+    '/changebizprice': ('Изменить цену бизнеса', 'Change business price'),
+    '/changebiztax': ('Изменить налог бизнеса', 'Change business tax'),
+    '/deleteproducts': ('Удалить продукцию бизнеса', 'Delete business products'),
+    '/setproductbyindex': ('Установить продукт по индексу', 'Set a product by index'),
+    '/createhouse': ('Создать дом', 'Create a house'),
+    '/removehouse': ('Удалить дом', 'Remove a house'),
+    '/changehouseprice': ('Изменить цену дома', 'Change house price'),
+    '/housechange': ('Изменить данные дома', 'Change house data'),
+    '/housetypeprice': ('Изменить цену типа дома', 'Change house type price'),
+    '/delhouseowner': ('Убрать владельца дома', 'Remove a house owner'),
+    '/removegarage': ('Удалить гараж', 'Remove a garage'),
+    '/setgarage': ('Настроить гараж', 'Set up a garage'),
+    '/setparkplace': ('Создать парковочное место', 'Set a parking spot'),
+    '/createsafe': ('Создать сейф', 'Create a safe'),
+    '/removesafe': ('Удалить сейф', 'Remove a safe'),
+    '/createunloadpoint': ('Создать точку разгрузки', 'Create an unload point'),
+    '/loadipl': ('Загрузить IPL', 'Load an IPL'),
+    '/unloadipl': ('Выгрузить IPL', 'Unload an IPL'),
+    '/loadprop': ('Загрузить объект интерьера', 'Load an interior prop'),
+    '/unloadprop': ('Выгрузить объект интерьера', 'Unload an interior prop'),
+    '/starteffect': ('Запустить эффект', 'Start an effect'),
+    '/stopeffect': ('Остановить эффект', 'Stop an effect'),
+    '/tr_ev_start': ('Запустить событие (уточните)', 'Start an event, check on your server'),
+    '/att': ('Серверная команда (уточните)', 'Server command, check on your server'),
+    '/natt': ('Серверная команда (уточните)', 'Server command, check on your server'),
+    '/st': ('Серверная команда (уточните)', 'Server command, check on your server'),
+    '/sl': ('Серверная команда (уточните)', 'Server command, check on your server'),
+    '/sw': ('Серверная команда (уточните)', 'Server command, check on your server'),
+    '/dimakrut': ('Серверная команда (уточните)', 'Server command, check on your server'),
+    '/airdrop': ('Запустить аирдроп', 'Start an airdrop'),
+    '/starttestairdrop': ('Запустить тестовый аирдроп', 'Start a test airdrop'),
+    '/stopairdrop': ('Остановить аирдроп', 'Stop an airdrop'),
+    '/helicrash': ('Запустить событие падения вертолёта', 'Start a helicopter crash event'),
+    '/stophelicrash': ('Остановить падение вертолёта', 'Stop the helicopter crash event'),
+    '/containers': ('Управление контейнерами', 'Manage containers'),
+    '/startcont': ('Запустить событие с контейнерами', 'Start a containers event'),
+    '/matwar': ('Запустить войну за материалы', 'Start a materials war'),
+    '/stopmatwar': ('Остановить войну за материалы', 'Stop a materials war'),
+    '/startmatwars': ('Запустить войны за материалы', 'Start materials wars'),
+    '/stopmatwars': ('Остановить войны за материалы', 'Stop materials wars'),
+    '/eventlist': ('Список событий', 'List of events'),
+}
+
+
+def command_info(cmd):
+    pair = COMMAND_INFO.get(cmd)
+    if not pair:
+        return ""
+    return pair[1] if LANG == "en" else pair[0]
+
+
+
 def all_commands(cfg):
     extra = [(c["cmd"], c.get("level", 1), "custom") for c in cfg["custom_commands"]]
     return COMMANDS + extra
@@ -232,8 +495,11 @@ T = {
         "hide": "Hide",
         "auto_chat": "Open chat automatically",
         "tab_console": "Console", "ask_level": "What is your admin level?",
-        "ask_level_hint": "Click your level. Later it can only be raised with /aupgrade in the Console tab.",
+        "ask_level_hint": "Click your level. Later it can only be changed with /aupgrade in the Console tab.",
         "ok": "OK", "console_placeholder": "Type a command",
+        "sound": "Sound when a bind fires", "check_updates": "Check for updates on start",
+        "check_now": "Check for updates", "update_new": "Update available: {v}. Download it: Settings, then Check for updates.",
+        "update_none": "You have the latest version ({v}).", "update_fail": "Could not check for updates.",
         "tab_cmdlist": "Command list", "level_group": "Level {n}", "cmdlist_empty": "No commands available.",
     },
     "ru": {
@@ -268,8 +534,11 @@ T = {
         "hide": "Скрыть",
         "auto_chat": "Открывать чат автоматически",
         "tab_console": "Консоль", "ask_level": "Какой у вас уровень администратора?",
-        "ask_level_hint": "Нажмите на свой уровень. Потом его можно только повысить командой /aupgrade на вкладке «Консоль».",
+        "ask_level_hint": "Нажмите на свой уровень. Потом его можно изменить только командой /aupgrade на вкладке «Консоль».",
         "ok": "OK", "console_placeholder": "Введите команду",
+        "sound": "Звук при срабатывании бинда", "check_updates": "Проверять обновления при запуске",
+        "check_now": "Проверить обновления", "update_new": "Доступна версия {v}. Скачайте её: Настройки, затем Проверить обновления.",
+        "update_none": "У вас последняя версия ({v}).", "update_fail": "Не удалось проверить обновления.",
         "tab_cmdlist": "Список команд", "level_group": "Уровень {n}", "cmdlist_empty": "Нет доступных команд.",
     },
     "uk": {
@@ -304,8 +573,11 @@ T = {
         "hide": "Сховати",
         "auto_chat": "Відкривати чат автоматично",
         "tab_console": "Консоль", "ask_level": "Який у вас рівень адміністратора?",
-        "ask_level_hint": "Натисніть на свій рівень. Потім його можна лише підвищити командою /aupgrade на вкладці «Консоль».",
+        "ask_level_hint": "Натисніть на свій рівень. Потім його можна змінити лише командою /aupgrade на вкладці «Консоль».",
         "ok": "OK", "console_placeholder": "Введіть команду",
+        "sound": "Звук при спрацюванні бінда", "check_updates": "Перевіряти оновлення при запуску",
+        "check_now": "Перевірити оновлення", "update_new": "Доступна версія {v}. Завантажте її: Налаштування, потім Перевірити оновлення.",
+        "update_none": "У вас остання версія ({v}).", "update_fail": "Не вдалося перевірити оновлення.",
         "tab_cmdlist": "Список команд", "level_group": "Рівень {n}", "cmdlist_empty": "Немає доступних команд.",
     },
 }
@@ -383,6 +655,8 @@ QPushButton#primary:hover { background: @BADGE_BG@; border-color: @ACCENT@; colo
 QPushButton#secondary { padding: 14px; font-size: 14px; }
 QPushButton#lvl { background: transparent; border: 1px solid @BORDER_HI@; border-radius: 22px; padding: 0; font-size: 16px; color: @LABEL@; }
 QPushButton#lvl:hover { border-color: @ACCENT@; color: @ACCENT@; background: @BADGE_BG@; }
+QLabel#qmark { border: 1px solid @BORDER_HI@; border-radius: 9px; color: @MUTED@; font-size: 11px; }
+QLabel#qmark:hover { border-color: @ACCENT@; color: @ACCENT@; }
 QPushButton#iconbtn { background: transparent; border: none; border-radius: 4px; padding: 0; }
 QPushButton#iconbtn:hover { background: @BORDER@; }
 QPushButton#iconcta { background: rgba(255, 255, 255, 8); border: 1px solid @NAV_BORDER@; border-radius: 6px; padding: 0; }
@@ -611,6 +885,17 @@ class NavButton(QPushButton):
         p.end()
 
 
+def play_click():
+    """Short beep so the admin hears that a bind fired (Windows only, never blocks)."""
+    def beep():
+        try:
+            import winsound
+            winsound.Beep(1100, 45)
+        except Exception:
+            pass
+    threading.Thread(target=beep, daemon=True).start()
+
+
 def set_autostart(enabled):
     if os.name != "nt":
         return
@@ -836,6 +1121,34 @@ class LevelDialog(QDialog):
         return self.chosen or 1
 
 
+def version_tuple(v):
+    out = []
+    for part in str(v).lstrip("vV").split("."):
+        digits = "".join(ch for ch in part if ch.isdigit())
+        out.append(int(digits) if digits else 0)
+    return tuple(out)
+
+
+class UpdateChecker(QObject):
+    """Asks GitHub for the latest release in a background thread."""
+    done = Signal(str, str, bool)   # tag, page url, ok
+
+    def check(self):
+        threading.Thread(target=self._run, daemon=True).start()
+
+    def _run(self):
+        try:
+            req = urllib.request.Request(
+                "https://api.github.com/repos/%s/releases/latest" % REPO,
+                headers={"User-Agent": "AdminPanel", "Accept": "application/vnd.github+json"})
+            with urllib.request.urlopen(req, timeout=8) as r:
+                data = json.loads(r.read().decode("utf-8"))
+            self.done.emit(str(data.get("tag_name", "")),
+                           str(data.get("html_url", "https://github.com/%s/releases" % REPO)), True)
+        except Exception:
+            self.done.emit("", "", False)
+
+
 class Toast(QLabel):
     def __init__(self):
         super().__init__()
@@ -850,13 +1163,13 @@ class Toast(QLabel):
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.hide)
 
-    def show_text(self, text):
+    def show_text(self, text, ms=1500):
         self.setText(text)
         self.adjustSize()
         scr = QApplication.primaryScreen().availableGeometry()
         self.move(scr.right() - self.width() - 24, scr.bottom() - self.height() - 24)
         self.show()
-        self.timer.start(1500)
+        self.timer.start(ms)
 
 
 # ----------------------------------------------------------------------------
@@ -1048,6 +1361,15 @@ class CommandListView(QWidget):
                 cell.addWidget(name)
                 cell.addWidget(sec)
                 cell.addStretch(1)
+                info = command_info(cmd)
+                if info:
+                    q = QLabel("?")
+                    q.setObjectName("qmark")
+                    q.setFixedSize(18, 18)
+                    q.setAlignment(Qt.AlignCenter)
+                    q.setCursor(Qt.WhatsThisCursor)
+                    q.setToolTip(info)
+                    cell.addWidget(q)
                 grid.addLayout(cell, i // 3, i % 3)
             block = QVBoxLayout()
             block.setSpacing(12)
@@ -1175,6 +1497,12 @@ class Main(QWidget):
         self.tray.setContextMenu(menu)
         self.tray.activated.connect(lambda _r: self.toggle_window())
         self.tray.show()
+
+        self.updater = UpdateChecker()
+        self.updater.done.connect(self.on_update_result)
+        self.update_manual = False
+        if cfg["check_updates"]:
+            QTimer.singleShot(3000, self.updater.check)
 
         hk.fired.connect(self.on_fired)
         self.apply_hotkeys()
@@ -1443,12 +1771,12 @@ class Main(QWidget):
             cur = self.cfg["level"]
             if lvl < 1 or lvl > 10:
                 return ["Level must be between 1 and 10."]
-            if lvl <= cur:
-                return ["Your level is already %d. /aupgrade can only raise it." % cur]
+            if lvl == cur:
+                return ["Your level is already %d." % cur]
             self.cfg["level"] = lvl
             self.cfg.save()
             QTimer.singleShot(0, self.after_upgrade)
-            return ["Admin level raised: %d -> %d" % (cur, lvl)]
+            return ["Admin level changed: %d -> %d" % (cur, lvl)]
         return ["Unknown command: %s" % cmd]
 
     def after_upgrade(self):
@@ -1521,9 +1849,20 @@ class Main(QWidget):
         auto.toggled.connect(self.set_autostart_pref)
         form.addRow("", auto)
 
+        snd = QCheckBox(tr("sound"))
+        snd.setChecked(bool(cfg["sound"]))
+        snd.toggled.connect(lambda on: self.set_setting("sound", bool(on), False))
+        form.addRow("", snd)
+
+        upd = QCheckBox(tr("check_updates"))
+        upd.setChecked(bool(cfg["check_updates"]))
+        upd.toggled.connect(lambda on: self.set_setting("check_updates", bool(on), False))
+        form.addRow("", upd)
+
         btns = QHBoxLayout()
         btns.setSpacing(16)
-        for text, slot in ((tr("export_binds"), self.export_binds),
+        for text, slot in ((tr("check_now") + "  v" + APP_VERSION, self.check_updates_now),
+                           (tr("export_binds"), self.export_binds),
                            (tr("import_binds"), self.import_binds),
                            (tr("add_custom"), self.add_custom),
                            (tr("quit"), self.quit_app)):
@@ -1545,6 +1884,24 @@ class Main(QWidget):
         sc.setFrameShape(QFrame.NoFrame)
         sc.setWidget(pane)
         return sc
+
+    # ---- updates -----------------------------------------------------------
+    def check_updates_now(self):
+        self.update_manual = True
+        self.updater.check()
+
+    def on_update_result(self, tag, url, ok):
+        manual, self.update_manual = self.update_manual, False
+        if not ok:
+            if manual:
+                self.toast.show_text(tr("update_fail"), 3000)
+            return
+        if version_tuple(tag) > version_tuple(APP_VERSION):
+            self.toast.show_text(tr("update_new").format(v=tag), 8000)
+            if manual:
+                webbrowser.open(url)
+        elif manual:
+            self.toast.show_text(tr("update_none").format(v=APP_VERSION), 3000)
 
     # ---- settings handlers -------------------------------------------------
     def set_setting(self, key, value, rebuild):
@@ -1641,6 +1998,8 @@ class Main(QWidget):
 
     # ---- reports -----------------------------------------------------------
     def report_add(self):
+        if self.cfg["sound"]:
+            play_click()
         self.cfg["reports"].append(time.time())
         self.cfg.save()
         self.after_report("toast_added")
@@ -1703,6 +2062,8 @@ class Main(QWidget):
         elif bid == "act:report_remove":
             self.report_remove()
         elif bid.startswith("cmd:"):
+            if self.cfg["sound"]:
+                play_click()
             now = time.time()
             if (now - self.last_send) * 1000 < self.cfg["cooldown_ms"]:
                 return

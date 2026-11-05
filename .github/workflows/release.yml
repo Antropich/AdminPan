@@ -21,6 +21,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt pyinstaller
 
+      - name: Stamp version into the app
+        if: github.event_name == 'release'
+        shell: pwsh
+        run: |
+          $v = "${{ github.event.release.tag_name }}".TrimStart("v")
+          (Get-Content admin_panel.py -Raw -Encoding UTF8) -replace 'APP_VERSION = "[^"]*"', "APP_VERSION = `"$v`"" | Set-Content admin_panel.py -Encoding UTF8
+
       - name: Build AdminPanel.exe
         run: pyinstaller --noconsole --onefile --uac-admin --icon assets/icon.ico --name AdminPanel admin_panel.py
 
