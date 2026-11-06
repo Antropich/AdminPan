@@ -36,14 +36,14 @@ Filename: "{app}\{#AppExe}"; Description: "Запустить Admin Panel"; Flag
 const
   RuntimeUrl = 'https://aka.ms/dotnet/10.0/windowsdesktop-runtime-win-x64.exe';
 
-function HasDesktopRuntime8(): Boolean;
+function HasDesktopRuntime10(): Boolean;
 var
   FindRec: TFindRec;
   RuntimePath: String;
 begin
   Result := False;
   RuntimePath := ExpandConstant('{autopf}\dotnet\shared\Microsoft.WindowsDesktop.App');
-  if FindFirst(RuntimePath + '\8.*', FindRec) then
+  if FindFirst(RuntimePath + '\10.*', FindRec) then
   begin
     try
       repeat
@@ -66,7 +66,7 @@ var
   PowerShellArgs: String;
 begin
   Result := True;
-  if HasDesktopRuntime8() then
+  if HasDesktopRuntime10() then
   begin
     Log('.NET 10 Desktop Runtime already installed.');
     exit;
@@ -79,7 +79,7 @@ begin
     exit;
   end;
 
-  RuntimeInstaller := ExpandConstant('{tmp}\windowsdesktop-runtime-8.exe');
+  RuntimeInstaller := ExpandConstant('{tmp}\windowsdesktop-runtime-10.exe');
   PowerShellArgs := '-NoProfile -ExecutionPolicy Bypass -Command "$ProgressPreference=''SilentlyContinue''; Invoke-WebRequest -Uri ''' +
     RuntimeUrl + ''' -OutFile ''' + RuntimeInstaller + '''"';
   if not Exec('powershell.exe', PowerShellArgs, '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then

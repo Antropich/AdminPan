@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Net.Http;
 using System.Windows.Forms;
 
 namespace AdminPanel;
@@ -28,6 +29,7 @@ public sealed class AppConfig
     public bool AutoStart { get; set; }
     public bool Sound { get; set; }
     public bool CheckUpdates { get; set; } = true;
+    public string LastNotifiedVersion { get; set; } = "";
     public Dictionary<string,string> Binds { get; set; } = new() { ["act:toggle"] = "Insert" };
     public List<string> Favorites { get; set; } = new();
     public List<string> CustomCommands { get; set; } = new();
@@ -49,10 +51,18 @@ public sealed class MainForm : Form
     AppConfig config = new();
     List<CommandItem> commands = new();
     readonly Panel sidebar = new(), content = new();
+    Panel? rootSurface;
     readonly Label title = new();
     readonly TextBox search = new();
     readonly FlowLayoutPanel tiles = new();
     readonly Dictionary<string,Button> nav = new();
+    readonly ToolTip commandTip = new() { InitialDelay = 0, ReshowDelay = 0, AutoPopDelay = 12000, ShowAlways = true };
+    Panel? bindOverlay;
+    Label? bindOverlayText;
+    string? pendingBindCommand;
+    Button? pendingBindButton;
+    Panel? updateToast;
+    System.Windows.Forms.Timer? toastTimer;
     bool compactMode;
     DateTime lastHotkey = DateTime.MinValue;
 
@@ -68,6 +78,9 @@ public sealed class MainForm : Form
         BackColor=Bg; ForeColor=TextMain; Font=new Font("Segoe UI",9.5f);
         FormBorderStyle=FormBorderStyle.Sizable; StartPosition=FormStartPosition.CenterScreen;
         BuildShell(); ShowCommands(); RegisterToggle();
+        Shown += async (_,_) => await CheckForUpdatesAsync();
+        Resize += (_,_) => PositionUpdateToast();
+        KeyPreview = true; KeyDown += HandleBindKeyDown;
         FormClosing += (_,_)=>{ UnregisterHotKey(Handle,HOTKEY_ID); SaveConfig(); };
     }
     void LoadConfig()
@@ -88,7 +101,7 @@ public sealed class MainForm : Form
     }
     void BuildShell()
     {
-        var root=new Panel{Dock=DockStyle.Fill,BackColor=Bg,Padding=new Padding(12)}; Controls.Add(root);
+        var root=new Panel{Dock=DockStyle.Fill,BackColor=Bg,Padding=new Padding(12)}; rootSurface=root; Controls.Add(root);
         sidebar.Width=205; sidebar.Dock=DockStyle.Left; sidebar.BackColor=Panel; sidebar.Padding=new Padding(12);
         root.Controls.Add(sidebar);
         var brand=new Label{Text="ADMIN PANEL",Dock=DockStyle.Top,Height=52,ForeColor=Accent,Font=new Font("Segoe UI Semibold",13),TextAlign=ContentAlignment.MiddleLeft};
@@ -130,12 +143,17 @@ public sealed class MainForm : Form
             var tile=new Panel{Width=205,Height=92,BackColor=Panel,Margin=new Padding(0,0,12,12),Padding=new Padding(12)};
             var cmd=new Label{Text=c.Command,ForeColor=Accent,Font=new Font("Consolas",14,FontStyle.Bold),Dock=DockStyle.Top,Height=28};
             var meta=new Label{Text=$"Уровень {c.Level} · {c.Category}",ForeColor=Muted,Dock=DockStyle.Top,Height=22};
-            var row=new FlowLayoutPanel{Dock=DockStyle.Bottom,Height=27,FlowDirection=FlowDirection.LeftToRight};
+            var row=new FlowLayoutPanel{Dock=DockStyle.Bottom,Height=27,FlowDirection=FlowDirection.LeftToRight,WrapContents=false};
+            var info=new Label{Text="?",Width=22,Height=23,TextAlign=ContentAlignment.MiddleCenter,ForeColor=Muted,BackColor=Color.FromArgb(32,32,32),Font=new Font("Segoe UI",8,FontStyle.Bold),Margin=new Padding(0,1,5,0),Cursor=Cursors.Help};
+            info.Paint += (_,e) => { using var pen=new Pen(Border); e.Graphics.DrawEllipse(pen,2,2,17,17); };
+            commandTip.SetToolTip(info, GetCommandDescription(c));
+            info.MouseEnter += (_,_) => commandTip.Show(GetCommandDescription(c),info,info.Width/2,info.Height+4,12000);
+            info.MouseLeave += (_,_) => commandTip.Hide(info);
             var bind=new Button{Text=config.Binds.GetValueOrDefault(c.Command,"Назначить"),Width=90,Height=25,FlatStyle=FlatStyle.Flat,ForeColor=TextMain,BackColor=Color.FromArgb(25,25,25)};
             bind.Click+=(_,_)=>CaptureBind(c.Command,bind);
             var fav=new Button{Text=config.Favorites.Contains(c.Command)?"★":"☆",Width=35,Height=25,FlatStyle=FlatStyle.Flat,ForeColor=Accent};
             fav.Click+=(_,_)=>{if(config.Favorites.Contains(c.Command))config.Favorites.Remove(c.Command);else config.Favorites.Add(c.Command);SaveConfig();ShowCommandTiles(favoritesOnly);};
-            row.Controls.Add(bind);row.Controls.Add(fav);
+            row.Controls.Add(info);row.Controls.Add(bind);row.Controls.Add(fav);
             tile.Controls.Add(row);tile.Controls.Add(meta);tile.Controls.Add(cmd);
             tile.DoubleClick+=(_,_)=>SendCommand(c.Command); cmd.DoubleClick+=(_,_)=>SendCommand(c.Command);
             tiles.Controls.Add(tile);
@@ -144,10 +162,163 @@ public sealed class MainForm : Form
     }
     void CaptureBind(string command,Button button)
     {
-        using var d=new KeyCaptureDialog(); if(d.ShowDialog(this)==DialogResult.OK && !string.IsNullOrWhiteSpace(d.SelectedKey))
+        // The bind prompt is an in-app overlay, never a separate Form/window.
+        if (rootSurface == null) return;
+        CloseBindOverlay();
+        pendingBindCommand = command;
+        pendingBindButton = button;
+
+        bindOverlay = new Panel
         {
-            foreach(var k in config.Binds.Where(x=>x.Value==d.SelectedKey).Select(x=>x.Key).ToList())config.Binds.Remove(k);
-            config.Binds[command]=d.SelectedKey; button.Text=d.SelectedKey; RegisterToggle(); SaveConfig();
+            Dock = DockStyle.Fill,
+            BackColor = Color.FromArgb(245, 0, 0, 0),
+            TabStop = true
+        };
+        var card = new Panel
+        {
+            Size = new Size(410, 174),
+            BackColor = Color.FromArgb(20, 20, 20),
+            BorderStyle = BorderStyle.FixedSingle,
+            Anchor = AnchorStyles.None
+        };
+        bindOverlayText = new Label
+        {
+            Text = $"Назначение клавиши\n\n{command}\n\nНажмите любую клавишу",
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleCenter,
+            ForeColor = TextMain,
+            Font = new Font("Segoe UI Semibold", 12)
+        };
+        var cancel = new Button
+        {
+            Text = "Отмена", Dock = DockStyle.Bottom, Height = 36,
+            FlatStyle = FlatStyle.Flat, BackColor = Color.FromArgb(30, 30, 30),
+            ForeColor = Muted, Cursor = Cursors.Hand
+        };
+        cancel.FlatAppearance.BorderColor = Border;
+        cancel.Click += (_, _) => CloseBindOverlay();
+        card.Controls.Add(bindOverlayText);
+        card.Controls.Add(cancel);
+        bindOverlay.Controls.Add(card);
+        bindOverlay.Resize += (_, _) =>
+        {
+            card.Left = (bindOverlay.ClientSize.Width - card.Width) / 2;
+            card.Top = (bindOverlay.ClientSize.Height - card.Height) / 2;
+        };
+        bindOverlay.KeyDown += HandleBindKeyDown;
+        rootSurface.Controls.Add(bindOverlay);
+        bindOverlay.BringToFront();
+        card.Left = (bindOverlay.ClientSize.Width - card.Width) / 2;
+        card.Top = (bindOverlay.ClientSize.Height - card.Height) / 2;
+
+        // Keep keyboard capture on the main application form.
+        Focus();
+        ActiveControl = null;
+    }
+
+    void CloseBindOverlay()
+    {
+        if (bindOverlay != null)
+        {
+            if (rootSurface != null) rootSurface.Controls.Remove(bindOverlay);
+            bindOverlay.Dispose();
+        }
+        bindOverlay = null;
+        bindOverlayText = null;
+        pendingBindCommand = null;
+        pendingBindButton = null;
+        Focus();
+    }
+
+    void HandleBindKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (bindOverlay == null || pendingBindCommand == null) return;
+        if (e.KeyCode == Keys.Escape)
+        {
+            CloseBindOverlay();
+            e.SuppressKeyPress = true;
+            return;
+        }
+        if (e.KeyCode is Keys.ControlKey or Keys.ShiftKey or Keys.Menu or Keys.LWin or Keys.RWin) return;
+
+        var selected = e.KeyCode.ToString();
+        foreach (var k in config.Binds.Where(x => x.Value == selected).Select(x => x.Key).ToList())
+            config.Binds.Remove(k);
+        config.Binds[pendingBindCommand] = selected;
+        if (pendingBindButton != null && !pendingBindButton.IsDisposed)
+            pendingBindButton.Text = selected;
+        CloseBindOverlay();
+        RegisterToggle();
+        SaveConfig();
+        e.SuppressKeyPress = true;
+    }
+    string GetCommandDescription(CommandItem c)
+    {
+        var known = new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["/a"]="Отправить сообщение в административный чат.", ["/asms"]="Открыть список или инструменты администрации.",
+            ["/admins"]="Показать список администрации онлайн.", ["/adelaction"]="Удалить административное действие.",
+            ["/mute"]="Выдать игроку ограничение на чат.", ["/unmute"]="Снять ограничение на чат.",
+            ["/offmute"]="Выдать офлайн-наказание за нарушение чата.", ["/offunmute"]="Снять офлайн-ограничение чата.",
+            ["/fz"]="Заморозить персонажа игрока.", ["/unfz"]="Разморозить персонажа игрока.",
+            ["/tp"]="Телепортироваться к игроку или указанной точке.", ["/tpc"]="Телепортироваться к автомобилю.",
+            ["/tpcarnumber"]="Найти или переместиться к автомобилю по номеру.", ["/mypos"]="Показать текущие координаты персонажа.",
+            ["/sp"]="Включить режим наблюдения.", ["/usp"]="Выйти из режима наблюдения.", ["/flip"]="Перевернуть транспортное средство.",
+            ["/setdim"]="Изменить измерение персонажа.", ["/setdimcar"]="Изменить измерение автомобиля."
+        };
+        if (known.TryGetValue(c.Command, out var description)) return description;
+        return c.Category.ToLowerInvariant() switch
+        {
+            "mute" => "Команда категории «Наказания чата». Используется для управления ограничениями чата.",
+            "watch" => "Команда категории «Наблюдение и телепортация». Используется для контроля игрока или перемещения.",
+            "chat" => "Команда категории «Чат». Используется для отправки сообщений или работы с чатами.",
+            "custom" => "Пользовательская команда, добавленная в настройки.",
+            _ => $"Команда {c.Command}. Категория: {c.Category}. Для точного описания проверьте справку сервера."
+        };
+    }
+    async System.Threading.Tasks.Task CheckForUpdatesAsync()
+    {
+        if (!config.CheckUpdates) return;
+        try
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("AdminPanel-Updater/1.0");
+            client.Timeout = TimeSpan.FromSeconds(5);
+            var json = await client.GetStringAsync("https://api.github.com/repos/Antropich/AdminPan/releases/latest");
+            using var doc = JsonDocument.Parse(json);
+            var tag = doc.RootElement.GetProperty("tag_name").GetString() ?? "";
+            var url = doc.RootElement.GetProperty("html_url").GetString() ?? "https://github.com/Antropich/AdminPan/releases";
+            var latestText = tag.TrimStart('v','V');
+            var currentText = Application.ProductVersion;
+            if (Version.TryParse(latestText, out var latest) && Version.TryParse(currentText, out var current) && latest > current && config.LastNotifiedVersion != tag)
+            {
+                config.LastNotifiedVersion = tag; SaveConfig();
+                ShowUpdateToast(tag, url);
+            }
+        }
+        catch { /* Проверка обновлений не должна мешать запуску приложения. */ }
+    }
+    void ShowUpdateToast(string version, string url)
+    {
+        updateToast?.Dispose();
+        var toast = new Panel { Size = new Size(330, 104), BackColor = Color.FromArgb(22,22,22), BorderStyle = BorderStyle.FixedSingle, Anchor = AnchorStyles.Top | AnchorStyles.Right };
+        var heading = new Label { Text = "Доступно обновление", Left = 14, Top = 10, Width = 295, Height = 24, ForeColor = Accent, Font = new Font("Segoe UI Semibold", 11) };
+        var detail = new Label { Text = $"Новая версия {version} уже доступна", Left = 14, Top = 38, Width = 295, Height = 20, ForeColor = Muted };
+        var open = new LinkLabel { Text = "Посмотреть обновление  →", Left = 14, Top = 67, Width = 200, Height = 22, LinkColor = Accent, ActiveLinkColor = TextMain };
+        open.Click += (_,_) => Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        var close = new Label { Text = "×", Left = 300, Top = 7, Width = 20, Height = 24, ForeColor = Muted, Cursor = Cursors.Hand, TextAlign = ContentAlignment.MiddleCenter };
+        close.Click += (_,_) => { toastTimer?.Stop(); toast.Dispose(); updateToast = null; };
+        toast.Controls.AddRange(new Control[] { heading, detail, open, close });
+        Controls.Add(toast); updateToast = toast; PositionUpdateToast(); toast.BringToFront();
+        toastTimer?.Dispose(); toastTimer = new System.Windows.Forms.Timer { Interval = 9000 };
+        toastTimer.Tick += (_,_) => { toastTimer.Stop(); if (!toast.IsDisposed) toast.Dispose(); if (ReferenceEquals(updateToast,toast)) updateToast=null; };
+        toastTimer.Start();
+    }
+    void PositionUpdateToast()
+    {
+        if (updateToast != null && !updateToast.IsDisposed)
+        {
+            updateToast.Left = ClientSize.Width - updateToast.Width - 18; updateToast.Top = 18;
         }
     }
     void RegisterToggle()
@@ -233,10 +404,4 @@ public sealed class MainForm : Form
     }
     Label MakeLabel(string text)=>new(){Text=text,ForeColor=Muted,AutoSize=true,Margin=new Padding(0,12,0,4)};
     protected override void OnShown(EventArgs e){base.OnShown(e);Navigate("commands");}
-}
-public sealed class KeyCaptureDialog : Form
-{
-    public string SelectedKey="";
-    Label prompt=new(){Text="Нажмите клавишу для назначения",Dock=DockStyle.Fill,TextAlign=ContentAlignment.MiddleCenter,ForeColor=Color.White};
-    public KeyCaptureDialog(){Text="Назначить клавишу";Size=new Size(360,150);BackColor=Color.FromArgb(15,15,15);FormBorderStyle=FormBorderStyle.FixedDialog;StartPosition=FormStartPosition.CenterParent;Controls.Add(prompt);KeyPreview=true;KeyDown+=(_,e)=>{SelectedKey=e.KeyCode.ToString();DialogResult=DialogResult.OK;Close();};}
 }
