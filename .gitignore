@@ -1,7 +1,5 @@
-__pycache__/
-*.pyc
-build/
+bin/
+obj/
+publish/
 dist/
-*.spec
-installer_output/
-build_setup/
+.vs/

@@ -1,0 +1,1222 @@
+[
+  {
+    "command": "/a",
+    "level": 1,
+    "category": "chat"
+  },
+  {
+    "command": "/asms",
+    "level": 1,
+    "category": "chat"
+  },
+  {
+    "command": "/admins",
+    "level": 1,
+    "category": "chat"
+  },
+  {
+    "command": "/adelaction",
+    "level": 1,
+    "category": "chat"
+  },
+  {
+    "command": "/mute",
+    "level": 1,
+    "category": "mute"
+  },
+  {
+    "command": "/unmute",
+    "level": 1,
+    "category": "mute"
+  },
+  {
+    "command": "/offmute",
+    "level": 1,
+    "category": "mute"
+  },
+  {
+    "command": "/offunmute",
+    "level": 1,
+    "category": "mute"
+  },
+  {
+    "command": "/fz",
+    "level": 1,
+    "category": "watch"
+  },
+  {
+    "command": "/unfz",
+    "level": 1,
+    "category": "watch"
+  },
+  {
+    "command": "/tp",
+    "level": 1,
+    "category": "watch"
+  },
+  {
+    "command": "/tpc",
+    "level": 1,
+    "category": "watch"
+  },
+  {
+    "command": "/tpcarnumber",
+    "level": 1,
+    "category": "watch"
+  },
+  {
+    "command": "/mypos",
+    "level": 1,
+    "category": "watch"
+  },
+  {
+    "command": "/sp",
+    "level": 1,
+    "category": "watch"
+  },
+  {
+    "command": "/usp",
+    "level": 1,
+    "category": "watch"
+  },
+  {
+    "command": "/flip",
+    "level": 1,
+    "category": "watch"
+  },
+  {
+    "command": "/setdim",
+    "level": 1,
+    "category": "watch"
+  },
+  {
+    "command": "/setdimcar",
+    "level": 1,
+    "category": "watch"
+  },
+  {
+    "command": "/checkdim",
+    "level": 1,
+    "category": "watch"
+  },
+  {
+    "command": "/id",
+    "level": 1,
+    "category": "info"
+  },
+  {
+    "command": "/checkwanted",
+    "level": 1,
+    "category": "info"
+  },
+  {
+    "command": "/stats",
+    "level": 1,
+    "category": "info"
+  },
+  {
+    "command": "/offstats",
+    "level": 1,
+    "category": "info"
+  },
+  {
+    "command": "/getvip",
+    "level": 1,
+    "category": "info"
+  },
+  {
+    "command": "/nhistory",
+    "level": 1,
+    "category": "info"
+  },
+  {
+    "command": "/ptime",
+    "level": 1,
+    "category": "info"
+  },
+  {
+    "command": "/hp",
+    "level": 1,
+    "category": "player"
+  },
+  {
+    "command": "/agm",
+    "level": 1,
+    "category": "admin"
+  },
+  {
+    "command": "/gm",
+    "level": 1,
+    "category": "player"
+  },
+  {
+    "command": "/slap",
+    "level": 1,
+    "category": "player"
+  },
+  {
+    "command": "/inv",
+    "level": 1,
+    "category": "player"
+  },
+  {
+    "command": "/takemask",
+    "level": 1,
+    "category": "player"
+  },
+  {
+    "command": "/redname",
+    "level": 1,
+    "category": "admin"
+  },
+  {
+    "command": "/kl",
+    "level": 1,
+    "category": "player"
+  },
+  {
+    "command": "/jail",
+    "level": 2,
+    "category": "jail"
+  },
+  {
+    "command": "/unjail",
+    "level": 2,
+    "category": "jail"
+  },
+  {
+    "command": "/offjail",
+    "level": 2,
+    "category": "jail"
+  },
+  {
+    "command": "/offunjail",
+    "level": 2,
+    "category": "jail"
+  },
+  {
+    "command": "/kick",
+    "level": 2,
+    "category": "kick"
+  },
+  {
+    "command": "/metp",
+    "level": 2,
+    "category": "watch"
+  },
+  {
+    "command": "/metpcar",
+    "level": 2,
+    "category": "watch"
+  },
+  {
+    "command": "/check",
+    "level": 2,
+    "category": "info"
+  },
+  {
+    "command": "/checkkill",
+    "level": 2,
+    "category": "info"
+  },
+  {
+    "command": "/medialist",
+    "level": 2,
+    "category": "info"
+  },
+  {
+    "command": "/spvehid",
+    "level": 2,
+    "category": "watch"
+  },
+  {
+    "command": "/spawn",
+    "level": 2,
+    "category": "watch"
+  },
+  {
+    "command": "/fixcar",
+    "level": 2,
+    "category": "vehicle"
+  },
+  {
+    "command": "/fixcarid",
+    "level": 2,
+    "category": "vehicle"
+  },
+  {
+    "command": "/carnumber",
+    "level": 2,
+    "category": "vehicle"
+  },
+  {
+    "command": "/clear",
+    "level": 3,
+    "category": "chat"
+  },
+  {
+    "command": "/ban",
+    "level": 3,
+    "category": "ban"
+  },
+  {
+    "command": "/unban",
+    "level": 3,
+    "category": "ban"
+  },
+  {
+    "command": "/offban",
+    "level": 3,
+    "category": "ban"
+  },
+  {
+    "command": "/unbanoff",
+    "level": 3,
+    "category": "ban"
+  },
+  {
+    "command": "/warn",
+    "level": 3,
+    "category": "warn"
+  },
+  {
+    "command": "/unwarn",
+    "level": 3,
+    "category": "warn"
+  },
+  {
+    "command": "/tpcar",
+    "level": 3,
+    "category": "watch"
+  },
+  {
+    "command": "/tpbiz",
+    "level": 3,
+    "category": "watch"
+  },
+  {
+    "command": "/tphouse",
+    "level": 3,
+    "category": "watch"
+  },
+  {
+    "command": "/checkmoney",
+    "level": 3,
+    "category": "info"
+  },
+  {
+    "command": "/adelactionall",
+    "level": 3,
+    "category": "chat"
+  },
+  {
+    "command": "/sethp",
+    "level": 3,
+    "category": "player"
+  },
+  {
+    "command": "/revive",
+    "level": 3,
+    "category": "player"
+  },
+  {
+    "command": "/kill",
+    "level": 3,
+    "category": "player"
+  },
+  {
+    "command": "/spveh",
+    "level": 3,
+    "category": "watch"
+  },
+  {
+    "command": "/delad",
+    "level": 3,
+    "category": "chat"
+  },
+  {
+    "command": "/offwarn",
+    "level": 3,
+    "category": "warn"
+  },
+  {
+    "command": "/unwarnoff",
+    "level": 3,
+    "category": "warn"
+  },
+  {
+    "command": "/softcheck",
+    "level": 4,
+    "category": "info"
+  },
+  {
+    "command": "/veh",
+    "level": 4,
+    "category": "vehicle"
+  },
+  {
+    "command": "/hardban",
+    "level": 4,
+    "category": "ban"
+  },
+  {
+    "command": "/unhardban",
+    "level": 4,
+    "category": "ban"
+  },
+  {
+    "command": "/offhardban",
+    "level": 4,
+    "category": "ban"
+  },
+  {
+    "command": "/unhardbanoff",
+    "level": 4,
+    "category": "ban"
+  },
+  {
+    "command": "/delveh",
+    "level": 4,
+    "category": "vehicle"
+  },
+  {
+    "command": "/delvehid",
+    "level": 4,
+    "category": "vehicle"
+  },
+  {
+    "command": "/delvehall",
+    "level": 4,
+    "category": "vehicle"
+  },
+  {
+    "command": "/delmyveh",
+    "level": 4,
+    "category": "vehicle"
+  },
+  {
+    "command": "/delobj",
+    "level": 4,
+    "category": "world"
+  },
+  {
+    "command": "/createmp",
+    "level": 4,
+    "category": "event"
+  },
+  {
+    "command": "/startmp",
+    "level": 4,
+    "category": "event"
+  },
+  {
+    "command": "/stopmp",
+    "level": 4,
+    "category": "event"
+  },
+  {
+    "command": "/banmp",
+    "level": 4,
+    "category": "event"
+  },
+  {
+    "command": "/unbanmp",
+    "level": 4,
+    "category": "event"
+  },
+  {
+    "command": "/mpkick",
+    "level": 4,
+    "category": "event"
+  },
+  {
+    "command": "/mpplayers",
+    "level": 4,
+    "category": "event"
+  },
+  {
+    "command": "/mppos",
+    "level": 4,
+    "category": "event"
+  },
+  {
+    "command": "/mpo",
+    "level": 4,
+    "category": "event"
+  },
+  {
+    "command": "/mphp",
+    "level": 4,
+    "category": "event"
+  },
+  {
+    "command": "/mpskin",
+    "level": 4,
+    "category": "event"
+  },
+  {
+    "command": "/mpskins",
+    "level": 4,
+    "category": "event"
+  },
+  {
+    "command": "/mpveh",
+    "level": 4,
+    "category": "event"
+  },
+  {
+    "command": "/accept",
+    "level": 5,
+    "category": "admin"
+  },
+  {
+    "command": "/unbanip",
+    "level": 5,
+    "category": "ban"
+  },
+  {
+    "command": "/shardban",
+    "level": 5,
+    "category": "ban"
+  },
+  {
+    "command": "/sban",
+    "level": 5,
+    "category": "ban"
+  },
+  {
+    "command": "/offunwarn",
+    "level": 5,
+    "category": "warn"
+  },
+  {
+    "command": "/afuel",
+    "level": 5,
+    "category": "vehicle"
+  },
+  {
+    "command": "/givegun",
+    "level": 5,
+    "category": "player"
+  },
+  {
+    "command": "/giveammo",
+    "level": 5,
+    "category": "player"
+  },
+  {
+    "command": "/skipquest",
+    "level": 5,
+    "category": "admin"
+  },
+  {
+    "command": "/setar",
+    "level": 5,
+    "category": "admin"
+  },
+  {
+    "command": "/setname",
+    "level": 5,
+    "category": "admin"
+  },
+  {
+    "command": "/setnameoff",
+    "level": 5,
+    "category": "admin"
+  },
+  {
+    "command": "/setleader",
+    "level": 5,
+    "category": "admin"
+  },
+  {
+    "command": "/delleader",
+    "level": 5,
+    "category": "admin"
+  },
+  {
+    "command": "/offdelfrac",
+    "level": 5,
+    "category": "admin"
+  },
+  {
+    "command": "/skick",
+    "level": 5,
+    "category": "kick"
+  },
+  {
+    "command": "/ishard",
+    "level": 6,
+    "category": "info"
+  },
+  {
+    "command": "/setvehcord",
+    "level": 6,
+    "category": "vehicle"
+  },
+  {
+    "command": "/agl",
+    "level": 6,
+    "category": "info"
+  },
+  {
+    "command": "/alog",
+    "level": 6,
+    "category": "info"
+  },
+  {
+    "command": "/nalog",
+    "level": 6,
+    "category": "info"
+  },
+  {
+    "command": "/winlog",
+    "level": 6,
+    "category": "info"
+  },
+  {
+    "command": "/delgun",
+    "level": 6,
+    "category": "player"
+  },
+  {
+    "command": "/promosync",
+    "level": 6,
+    "category": "server"
+  },
+  {
+    "command": "/getstatsserverdata",
+    "level": 6,
+    "category": "info"
+  },
+  {
+    "command": "/setskin",
+    "level": 6,
+    "category": "player"
+  },
+  {
+    "command": "/skin",
+    "level": 6,
+    "category": "player"
+  },
+  {
+    "command": "/clothoff",
+    "level": 6,
+    "category": "player"
+  },
+  {
+    "command": "/setcolour",
+    "level": 6,
+    "category": "vehicle"
+  },
+  {
+    "command": "/delfrac",
+    "level": 6,
+    "category": "admin"
+  },
+  {
+    "command": "/setbizmafia",
+    "level": 6,
+    "category": "world"
+  },
+  {
+    "command": "/delobjects",
+    "level": 6,
+    "category": "world"
+  },
+  {
+    "command": "/szstate",
+    "level": 6,
+    "category": "info"
+  },
+  {
+    "command": "/global",
+    "level": 7,
+    "category": "chat"
+  },
+  {
+    "command": "/pa",
+    "level": 7,
+    "category": "chat"
+  },
+  {
+    "command": "/sa",
+    "level": 7,
+    "category": "chat"
+  },
+  {
+    "command": "/sac",
+    "level": 7,
+    "category": "chat"
+  },
+  {
+    "command": "/sc",
+    "level": 7,
+    "category": "chat"
+  },
+  {
+    "command": "/tsc",
+    "level": 7,
+    "category": "chat"
+  },
+  {
+    "command": "/acancel",
+    "level": 7,
+    "category": "chat"
+  },
+  {
+    "command": "/uncrimeban",
+    "level": 7,
+    "category": "ban"
+  },
+  {
+    "command": "/offuncrimeban",
+    "level": 7,
+    "category": "ban"
+  },
+  {
+    "command": "/setadmin",
+    "level": 7,
+    "category": "admin"
+  },
+  {
+    "command": "/deladmin",
+    "level": 7,
+    "category": "admin"
+  },
+  {
+    "command": "/offdeladmin",
+    "level": 7,
+    "category": "admin"
+  },
+  {
+    "command": "/arank",
+    "level": 7,
+    "category": "admin"
+  },
+  {
+    "command": "/offarank",
+    "level": 7,
+    "category": "admin"
+  },
+  {
+    "command": "/aclear",
+    "level": 7,
+    "category": "chat"
+  },
+  {
+    "command": "/fclear",
+    "level": 7,
+    "category": "chat"
+  },
+  {
+    "command": "/banlogin",
+    "level": 7,
+    "category": "ban"
+  },
+  {
+    "command": "/crimeban",
+    "level": 7,
+    "category": "ban"
+  },
+  {
+    "command": "/offcrimeban",
+    "level": 7,
+    "category": "ban"
+  },
+  {
+    "command": "/getlogin",
+    "level": 7,
+    "category": "info"
+  },
+  {
+    "command": "/hideme",
+    "level": 7,
+    "category": "admin"
+  },
+  {
+    "command": "/vehs",
+    "level": 7,
+    "category": "vehicle"
+  },
+  {
+    "command": "/spvehs",
+    "level": 7,
+    "category": "watch"
+  },
+  {
+    "command": "/setfracveh",
+    "level": 7,
+    "category": "vehicle"
+  },
+  {
+    "command": "/svh",
+    "level": 7,
+    "category": "vehicle"
+  },
+  {
+    "command": "/svm",
+    "level": 7,
+    "category": "vehicle"
+  },
+  {
+    "command": "/svn",
+    "level": 7,
+    "category": "vehicle"
+  },
+  {
+    "command": "/elog",
+    "level": 7,
+    "category": "info"
+  },
+  {
+    "command": "/givevip",
+    "level": 7,
+    "category": "give"
+  },
+  {
+    "command": "/offgivevip",
+    "level": 7,
+    "category": "give"
+  },
+  {
+    "command": "/giveexp",
+    "level": 7,
+    "category": "give"
+  },
+  {
+    "command": "/givelvl",
+    "level": 7,
+    "category": "give"
+  },
+  {
+    "command": "/goadditem",
+    "level": 7,
+    "category": "give"
+  },
+  {
+    "command": "/givehc",
+    "level": 7,
+    "category": "give"
+  },
+  {
+    "command": "/givehcrad",
+    "level": 7,
+    "category": "give"
+  },
+  {
+    "command": "/getrb",
+    "level": 7,
+    "category": "info"
+  },
+  {
+    "command": "/setfamily",
+    "level": 7,
+    "category": "admin"
+  },
+  {
+    "command": "/setfractun",
+    "level": 7,
+    "category": "admin"
+  },
+  {
+    "command": "/deljob",
+    "level": 7,
+    "category": "admin"
+  },
+  {
+    "command": "/elections",
+    "level": 7,
+    "category": "admin"
+  },
+  {
+    "command": "/stt",
+    "level": 7,
+    "category": "server"
+  },
+  {
+    "command": "/vlist",
+    "level": 8,
+    "category": "info"
+  },
+  {
+    "command": "/givecarnumber",
+    "level": 8,
+    "category": "vehicle"
+  },
+  {
+    "command": "/vehchange",
+    "level": 8,
+    "category": "vehicle"
+  },
+  {
+    "command": "/givemoney",
+    "level": 8,
+    "category": "give"
+  },
+  {
+    "command": "/offgivemoney",
+    "level": 8,
+    "category": "give"
+  },
+  {
+    "command": "/givereds",
+    "level": 8,
+    "category": "give"
+  },
+  {
+    "command": "/offgivereds",
+    "level": 8,
+    "category": "give"
+  },
+  {
+    "command": "/additem",
+    "level": 8,
+    "category": "give"
+  },
+  {
+    "command": "/giveclothes",
+    "level": 8,
+    "category": "give"
+  },
+  {
+    "command": "/carcoupon",
+    "level": 8,
+    "category": "vehicle"
+  },
+  {
+    "command": "/bonussync",
+    "level": 8,
+    "category": "server"
+  },
+  {
+    "command": "/setmicrophone",
+    "level": 8,
+    "category": "player"
+  },
+  {
+    "command": "/takeoffbiz",
+    "level": 8,
+    "category": "world"
+  },
+  {
+    "command": "/changestock",
+    "level": 8,
+    "category": "world"
+  },
+  {
+    "command": "/setprod",
+    "level": 8,
+    "category": "world"
+  },
+  {
+    "command": "/creategarage",
+    "level": 8,
+    "category": "world"
+  },
+  {
+    "command": "/setbliporg",
+    "level": 8,
+    "category": "world"
+  },
+  {
+    "command": "/delbliporg",
+    "level": 8,
+    "category": "world"
+  },
+  {
+    "command": "/sendcreator",
+    "level": 8,
+    "category": "chat"
+  },
+  {
+    "command": "/fsetcmd",
+    "level": 8,
+    "category": "server"
+  },
+  {
+    "command": "/autorestart",
+    "level": 8,
+    "category": "server"
+  },
+  {
+    "command": "/hidenick",
+    "level": 9,
+    "category": "admin"
+  },
+  {
+    "command": "/dmgmodif",
+    "level": 9,
+    "category": "vehicle"
+  },
+  {
+    "command": "/setvehdirt",
+    "level": 9,
+    "category": "vehicle"
+  },
+  {
+    "command": "/vehcustom",
+    "level": 9,
+    "category": "vehicle"
+  },
+  {
+    "command": "/vehcustompcolor",
+    "level": 9,
+    "category": "vehicle"
+  },
+  {
+    "command": "/vehcustomscolor",
+    "level": 9,
+    "category": "vehicle"
+  },
+  {
+    "command": "/giveredsall",
+    "level": 9,
+    "category": "give"
+  },
+  {
+    "command": "/givecase",
+    "level": 9,
+    "category": "give"
+  },
+  {
+    "command": "/enablefunc",
+    "level": 9,
+    "category": "server"
+  },
+  {
+    "command": "/restart",
+    "level": 9,
+    "category": "server"
+  },
+  {
+    "command": "/save",
+    "level": 9,
+    "category": "server"
+  },
+  {
+    "command": "/payday",
+    "level": 9,
+    "category": "server"
+  },
+  {
+    "command": "/newsimcard",
+    "level": 9,
+    "category": "server"
+  },
+  {
+    "command": "/createbusiness",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/deletebusiness",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/changebizprice",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/changebiztax",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/deleteproducts",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/setproductbyindex",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/createhouse",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/removehouse",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/changehouseprice",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/housechange",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/housetypeprice",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/delhouseowner",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/removegarage",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/setgarage",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/setparkplace",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/createsafe",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/removesafe",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/createunloadpoint",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/loadipl",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/unloadipl",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/loadprop",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/unloadprop",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/starteffect",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/stopeffect",
+    "level": 9,
+    "category": "world"
+  },
+  {
+    "command": "/tr_ev_start",
+    "level": 9,
+    "category": "event"
+  },
+  {
+    "command": "/att",
+    "level": 9,
+    "category": "server"
+  },
+  {
+    "command": "/natt",
+    "level": 9,
+    "category": "server"
+  },
+  {
+    "command": "/st",
+    "level": 9,
+    "category": "server"
+  },
+  {
+    "command": "/sl",
+    "level": 9,
+    "category": "server"
+  },
+  {
+    "command": "/sw",
+    "level": 9,
+    "category": "server"
+  },
+  {
+    "command": "/dimakrut",
+    "level": 9,
+    "category": "server"
+  },
+  {
+    "command": "/airdrop",
+    "level": 10,
+    "category": "event"
+  },
+  {
+    "command": "/starttestairdrop",
+    "level": 10,
+    "category": "event"
+  },
+  {
+    "command": "/stopairdrop",
+    "level": 10,
+    "category": "event"
+  },
+  {
+    "command": "/helicrash",
+    "level": 10,
+    "category": "event"
+  },
+  {
+    "command": "/stophelicrash",
+    "level": 10,
+    "category": "event"
+  },
+  {
+    "command": "/containers",
+    "level": 10,
+    "category": "event"
+  },
+  {
+    "command": "/startcont",
+    "level": 10,
+    "category": "event"
+  },
+  {
+    "command": "/matwar",
+    "level": 10,
+    "category": "event"
+  },
+  {
+    "command": "/stopmatwar",
+    "level": 10,
+    "category": "event"
+  },
+  {
+    "command": "/startmatwars",
+    "level": 10,
+    "category": "event"
+  },
+  {
+    "command": "/stopmatwars",
+    "level": 10,
+    "category": "event"
+  },
+  {
+    "command": "/eventlist",
+    "level": 10,
+    "category": "event"
+  }
+]
