@@ -18,13 +18,14 @@ UninstallDisplayIcon={app}\{#AppExe}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=..\AdminPanel\Assets\AdminPanel.ico
 
 [Files]
 Source: "..\publish\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 
 [Icons]
-Name: "{group}\Admin Panel"; Filename: "{app}\{#AppExe}"
-Name: "{autodesktop}\Admin Panel"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
+Name: "{group}\Admin Panel"; Filename: "{app}\{#AppExe}"; IconFilename: "{app}\Assets\AdminPanel.ico"
+Name: "{autodesktop}\Admin Panel"; Filename: "{app}\{#AppExe}"; IconFilename: "{app}\Assets\AdminPanel.ico"; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Создать ярлык на рабочем столе"; Flags: unchecked

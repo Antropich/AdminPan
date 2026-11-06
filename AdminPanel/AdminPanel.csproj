@@ -10,5 +10,9 @@
     <RootNamespace>AdminPanel</RootNamespace>
     <Version>1.2.0</Version>
   </PropertyGroup>
-  <ItemGroup><Content Include="commands.json"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content></ItemGroup>
+  <ItemGroup>
+    <Content Include="commands.json"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+    <Content Include="Assets\\AdminPanelLogo.png"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+    <Content Include="Assets\\AdminPanel.ico"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+  </ItemGroup>
 </Project>

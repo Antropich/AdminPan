@@ -75,6 +75,8 @@ public sealed class MainForm : Form
         configPath=Path.Combine(dataDir,"config.json");
         Directory.CreateDirectory(dataDir); LoadConfig(); LoadCommands();
         Text="Admin Panel"; MinimumSize=new Size(900,600); Size=new Size(1120,740);
+        var appIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AdminPanel.ico");
+        if (File.Exists(appIconPath)) { try { Icon = new Icon(appIconPath); } catch { } }
         BackColor=Bg; ForeColor=TextMain; Font=new Font("Segoe UI",9.5f);
         FormBorderStyle=FormBorderStyle.Sizable; StartPosition=FormStartPosition.CenterScreen;
         BuildShell(); ShowCommands(); RegisterToggle();
@@ -104,7 +106,17 @@ public sealed class MainForm : Form
         var root=new Panel{Dock=DockStyle.Fill,BackColor=Bg,Padding=new Padding(12)}; rootSurface=root; Controls.Add(root);
         sidebar.Width=205; sidebar.Dock=DockStyle.Left; sidebar.BackColor=Panel; sidebar.Padding=new Padding(12);
         root.Controls.Add(sidebar);
-        var brand=new Label{Text="ADMIN PANEL",Dock=DockStyle.Top,Height=52,ForeColor=Accent,Font=new Font("Segoe UI Semibold",13),TextAlign=ContentAlignment.MiddleLeft};
+        var brand = new Panel { Dock = DockStyle.Top, Height = 52, BackColor = Panel };
+        var logoPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AdminPanelLogo.png");
+        if (File.Exists(logoPath))
+        {
+            var logo = new PictureBox { Left = 0, Top = 8, Width = 36, Height = 36, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.Transparent };
+            using (var stream = new FileStream(logoPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var memory = new MemoryStream()) { stream.CopyTo(memory); memory.Position = 0; using var sourceImage = Image.FromStream(memory); logo.Image = new Bitmap(sourceImage); }
+            brand.Controls.Add(logo);
+        }
+        var brandText = new Label { Text = "ADMIN PANEL", Left = 44, Top = 0, Width = 145, Height = 52, ForeColor = Accent, Font = new Font("Segoe UI Semibold", 13), TextAlign = ContentAlignment.MiddleLeft };
+        brand.Controls.Add(brandText);
         sidebar.Controls.Add(brand);
         AddNav("Команды","commands"); AddNav("Избранное","favorites"); AddNav("Репорты","reports"); AddNav("Заметки","notes"); AddNav("Настройки","settings");
         content.Dock=DockStyle.Fill; content.BackColor=Bg; content.Padding=new Padding(24,8,8,8); root.Controls.Add(content);
