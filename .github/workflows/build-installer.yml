@@ -1,0 +1,42 @@
+name: Build Windows installer
+
+on:
+  push:
+    branches: [main, add-csharp-installer]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore project archive
+        shell: pwsh
+        run: |
+          $encoded = Get-Content "AdminPanel-GitHub-Actions.zip.b64" -Raw
+          [IO.File]::WriteAllBytes("AdminPanel-GitHub-Actions.zip", [Convert]::FromBase64String($encoded))
+          Expand-Archive "AdminPanel-GitHub-Actions.zip" -DestinationPath . -Force
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish app
+        run: dotnet publish AdminPanel/AdminPanel.csproj -c Release -r win-x64 --self-contained false -o publish
+      - name: Install Inno Setup
+        run: choco install innosetup --yes --no-progress
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { $iscc = "$env:ProgramFiles\Inno Setup 6\ISCC.exe" }
+          & $iscc "Installer/AdminPanel.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed." }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AdminPanel-Setup
+          path: dist/AdminPanel-Setup.exe
+          if-no-files-found: error
+          retention-days: 30
